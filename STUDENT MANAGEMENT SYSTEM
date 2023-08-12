@@ -1,0 +1,296 @@
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
+
+class Student implements Serializable {
+    private static final long serialVersionUID = 1L;
+    int rollno;
+    String name;
+    int p_marks, c_marks, m_marks, e_marks, cs_marks, extra;
+    double per;
+    char grade;
+
+    // Function to calculate grade
+    private void calculate() {
+        per = (((p_marks + c_marks + m_marks + e_marks + cs_marks) / 5.0) * 0.7) + (extra * 0.3);
+        if (per >= 95)
+            grade = 'A';
+        else if (per >= 90 && per < 95)
+            grade = 'A';
+        else if (per >= 80 && per < 90)
+            grade = 'B';
+        else if (per >= 70 && per < 80)
+            grade = 'C';
+        else if (per >= 60 && per < 70)
+            grade = 'D';
+        else if (per >= 40 && per < 60)
+            grade = 'E';
+        else if (per < 40)
+            grade = 'F';
+    }
+
+    // Function to accept data from user
+    void getData() {
+        rollno = Integer.parseInt(JOptionPane.showInputDialog("Enter The Roll Number of Student: "));
+        name = JOptionPane.showInputDialog("Enter The Name of Student: ");
+        p_marks = Integer.parseInt(JOptionPane.showInputDialog("Enter The Marks in Physics out of 100: "));
+        c_marks = Integer.parseInt(JOptionPane.showInputDialog("Enter The Marks in Chemistry out of 100: "));
+        m_marks = Integer.parseInt(JOptionPane.showInputDialog("Enter The Marks in Mathematics out of 100: "));
+        e_marks = Integer.parseInt(JOptionPane.showInputDialog("Enter The Marks in English out of 100: "));
+        cs_marks = Integer.parseInt(JOptionPane.showInputDialog("Enter The Marks in Computer Science out of 100: "));
+        extra = Integer.parseInt(JOptionPane.showInputDialog("Enter The Marks in Extra-Curricular activities out of 100: "));
+        calculate();
+    }
+
+    // Function to show data in a dialog box
+    void showData() {
+        DecimalFormat df = new DecimalFormat("0.00");
+        String message = "Roll number of student: " + rollno +
+                "\nName of student: " + name +
+                "\nMarks in Physics: " + p_marks +
+                "\nMarks in Chemistry: " + c_marks +
+                "\nMarks in Mathematics: " + m_marks +
+                "\nMarks in English: " + e_marks +
+                "\nMarks in Computer Science: " + cs_marks +
+                "\nMarks in Extra-curricular activities: " + extra +
+                "\nPercentage of student is: " + df.format(per) +
+                "\nGrade of student is: " + grade;
+
+        JOptionPane.showMessageDialog(null, message, "Student Record", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    Object[] toTableRow() {
+        DecimalFormat df = new DecimalFormat("0.00");
+        return new Object[]{rollno, name, p_marks, c_marks, m_marks, e_marks, cs_marks, extra, df.format(per), grade};
+    }
+
+    int getRollNo() {
+        return rollno;
+    }
+}
+
+class StartPage extends JFrame implements ActionListener {
+    private JLabel label;
+    private JPasswordField passwordField;
+    private JButton startBtn;
+
+    StartPage() {
+        setTitle("Login");
+        setSize(400, 200);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        label = new JLabel("EVALUATION OF ACADEMIC PERFORMANCE - BY SHIKHAR AGARWAL");
+        label.setFont(new Font("Arial", Font.BOLD, 16));
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+
+        passwordField = new JPasswordField(10);
+        passwordField.addActionListener(this);
+
+        startBtn = new JButton("Start");
+        startBtn.addActionListener(this);
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(label, BorderLayout.CENTER);
+
+        JPanel passwordPanel = new JPanel();
+        passwordPanel.add(new JLabel("Enter Password: "));
+        passwordPanel.add(passwordField);
+        passwordPanel.add(startBtn);
+
+        setLayout(new BorderLayout());
+        add(panel, BorderLayout.CENTER);
+        add(passwordPanel, BorderLayout.SOUTH);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        String password = new String(passwordField.getPassword());
+        try (BufferedReader br = new BufferedReader(new FileReader("password.txt"))) {
+            String correctPassword = br.readLine();
+            if (password.equals(correctPassword)) {
+                dispose();
+                StudentManagementSystem frame = new StudentManagementSystem();
+                frame.setVisible(true);
+            } else {
+                JOptionPane.showMessageDialog(this, "Incorrect password!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+}
+
+public class StudentManagementSystem extends JFrame implements ActionListener {
+    private DefaultTableModel tableModel;
+    private JTable table;
+    private JButton createBtn, displayAllBtn, modifyBtn, deleteBtn;
+    private JTextField rollNoField;
+    private JButton searchBtn;
+    private JButton classResultBtn;
+
+    private List<Student> students;
+
+    public StudentManagementSystem() {
+        setTitle("Student Management System");
+        setSize(800, 500);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        createBtn = new JButton("Create Student Record");
+        createBtn.addActionListener(this);
+
+        displayAllBtn = new JButton("Display All Students Records");
+        displayAllBtn.addActionListener(this);
+
+        modifyBtn = new JButton("Modify Student Record");
+        modifyBtn.addActionListener(this);
+
+        deleteBtn = new JButton("Delete Student Record");
+        deleteBtn.addActionListener(this);
+
+        classResultBtn = new JButton("Class Result");
+        classResultBtn.addActionListener(this);
+
+        rollNoField = new JTextField(10);
+        searchBtn = new JButton("Search");
+        searchBtn.addActionListener(this);
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(createBtn);
+        buttonPanel.add(displayAllBtn);
+        buttonPanel.add(modifyBtn);
+        buttonPanel.add(deleteBtn);
+        buttonPanel.add(classResultBtn);
+
+        JPanel searchPanel = new JPanel();
+        searchPanel.add(new JLabel("Enter Roll Number: "));
+        searchPanel.add(rollNoField);
+        searchPanel.add(searchBtn);
+
+        tableModel = new DefaultTableModel();
+        tableModel.setColumnIdentifiers(new Object[]{"Roll", "Name", "P", "C", "M", "E", "CS", "Extra", "%age", "Grade"});
+        table = new JTable(tableModel);
+        JScrollPane tableScrollPane = new JScrollPane(table);
+
+        setLayout(new BorderLayout());
+        add(buttonPanel, BorderLayout.NORTH);
+        add(tableScrollPane, BorderLayout.CENTER);
+        add(searchPanel, BorderLayout.SOUTH);
+
+        students = new ArrayList<>();
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == createBtn) {
+            Student student = new Student();
+            student.getData();
+            students.add(student);
+            saveStudentRecords();
+            displayAllRecords();
+        } else if (e.getSource() == displayAllBtn) {
+            displayAllRecords();
+        } else if (e.getSource() == modifyBtn) {
+            int rollNo = getRollNoFromUser();
+            modifyStudentRecord(rollNo);
+            displayAllRecords();
+        } else if (e.getSource() == deleteBtn) {
+            int rollNo = getRollNoFromUser();
+            deleteStudentRecord(rollNo);
+            displayAllRecords();
+        } else if (e.getSource() == classResultBtn) {
+            displayClassResult();
+        } else if (e.getSource() == searchBtn) {
+            int rollNo = Integer.parseInt(rollNoField.getText());
+            displayStudentRecord(rollNo);
+        }
+    }
+
+    private void saveStudentRecords() {
+        try (ObjectOutputStream outFile = new ObjectOutputStream(new FileOutputStream("student.dat"))) {
+            for (Student student : students) {
+                outFile.writeObject(student);
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void displayAllRecords() {
+        tableModel.setRowCount(0);
+        try (ObjectInputStream inFile = new ObjectInputStream(new FileInputStream("student.dat"))) {
+            while (true) {
+                Student student = (Student) inFile.readObject();
+                tableModel.addRow(student.toTableRow());
+            }
+        } catch (EOFException ignored) {
+        } catch (IOException | ClassNotFoundException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void modifyStudentRecord(int rollNo) {
+        for (int i = 0; i < students.size(); i++) {
+            Student student = students.get(i);
+            if (student.getRollNo() == rollNo) {
+                Student updatedStudent = new Student();
+                updatedStudent.getData();
+                students.set(i, updatedStudent);
+                saveStudentRecords();
+                break;
+            }
+        }
+    }
+
+    private void deleteStudentRecord(int rollNo) {
+        students.removeIf(student -> student.getRollNo() == rollNo);
+        saveStudentRecords();
+    }
+
+    private void displayClassResult() {
+        tableModel.setRowCount(0);
+        try (ObjectInputStream inFile = new ObjectInputStream(new FileInputStream("student.dat"))) {
+            while (true) {
+                Student student = (Student) inFile.readObject();
+                tableModel.addRow(student.toTableRow());
+            }
+        } catch (EOFException ignored) {
+        } catch (IOException | ClassNotFoundException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void displayStudentRecord(int rollNo) {
+        tableModel.setRowCount(0);
+        try (ObjectInputStream inFile = new ObjectInputStream(new FileInputStream("student.dat"))) {
+            while (true) {
+                Student student = (Student) inFile.readObject();
+                if (student.getRollNo() == rollNo) {
+                    tableModel.addRow(student.toTableRow());
+                    break;
+                }
+            }
+        } catch (EOFException ignored) {
+        } catch (IOException | ClassNotFoundException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private int getRollNoFromUser() {
+        String rollNoStr = JOptionPane.showInputDialog("Enter Roll Number: ");
+        return Integer.parseInt(rollNoStr);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            StartPage startPage = new StartPage();
+            startPage.setVisible(true);
+        });
+    }
+}
